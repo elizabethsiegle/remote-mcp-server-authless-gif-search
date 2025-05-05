@@ -1,6 +1,7 @@
 # Building a Remote MCP Server on Cloudflare (Without Auth)
 
-This example allows you to deploy a remote MCP server that doesn't require authentication on Cloudflare Workers. 
+This example allows you to deploy a remote MCP server that doesn't require authentication on Cloudflare Workers that returns gifs based on input queries. <img width="1006" alt="example image in workers ai" src="https://github.com/user-attachments/assets/5a72ba68-5df9-4d6f-b8d7-874a5155ddcc" />
+
 
 ## Get started: 
 
