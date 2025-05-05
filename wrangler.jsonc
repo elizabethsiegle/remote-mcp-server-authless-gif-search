@@ -24,5 +24,12 @@
 	},
 	"observability": {
 		"enabled": true
-	}
+	},
+	"secrets_store_secrets": [
+    {
+      "binding": "GIPHY_API_KEY",
+      "store_id": "aa2a9365cc504884bc188934c168dba5",
+      "secret_name": "giphy"
+    }
+  ]
 }

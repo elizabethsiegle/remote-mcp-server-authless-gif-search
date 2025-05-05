@@ -1,6 +1,23 @@
 import { McpAgent } from "agents/mcp";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
+import { env } from 'cloudflare:workers'
+function getEnv<Env>() {
+	return env as Env
+}
+
+const env2 = getEnv<Env>()
+console.log(`env2: ${JSON.stringify(env2)}`)
+
+interface GiphyResponse {
+	data: Array<{
+		images: {
+			fixed_height: {
+				url: string;
+			};
+		};
+	}>;
+}
 
 // Define our MCP agent with tools
 export class MyMCP extends McpAgent {
@@ -53,6 +70,66 @@ export class MyMCP extends McpAgent {
 						break;
 				}
 				return { content: [{ type: "text", text: String(result) }] };
+			}
+		);
+
+		// Giphy search tool
+		this.server.tool(
+			"searchGif",
+			{ query: z.string() },
+			async ({ query }) => {
+				console.log(`query ${query}`);
+				const APIkey = await (env as any).GIPHY_API_KEY.get();
+				console.log(`APIkey: ${APIkey}`)
+				if (!APIkey) {
+					return {
+						content: [{
+							type: "text",
+							text: "Error: GIPHY_API_KEY environment variable is not set"
+						}]
+					};
+				}
+
+				try {
+					const response = await fetch(
+						`https://api.giphy.com/v1/gifs/search?api_key=${APIkey}&q=${encodeURIComponent(query)}&limit=1&offset=0&rating=g&lang=en`
+					);
+					const data = await response.json() as GiphyResponse;
+
+					if (data.data && data.data.length > 0) {
+						const gifUrl = data.data[0].images.fixed_height.url;
+						// Fetch the actual GIF data
+						const gifResponse = await fetch(gifUrl);
+						const gifData = await gifResponse.arrayBuffer();
+						const base64Data = Buffer.from(gifData).toString('base64');
+
+						return {
+							content: [
+								{ type: "text", text: "Here's a GIF for you:" },
+								{ 
+									type: "image", 
+									data: base64Data,
+									mimeType: "image/gif"
+								}
+							]
+						};
+					} else {
+						return {
+							content: [{
+								type: "text",
+								text: "No GIFs found for your search query"
+							}]
+						};
+					}
+				} catch (error) {
+					const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+					return {
+						content: [{
+							type: "text",
+							text: `Error searching for GIF: ${errorMessage}`
+						}]
+					};
+				}
 			}
 		);
 	}
